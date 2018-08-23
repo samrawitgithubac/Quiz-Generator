@@ -6,30 +6,69 @@ import sqlite3 as lite
 from clint.textui import colored
 
 
-def readNames(dbName='radioDB.db'):
+def readNames(tableName='USERS', dbName='radioDB.db'):
     """
-       MISSING DESCRIPTION
+       DEVELOPMENT
+       
+       take a table and database name with default settings
+       makes a query to the database for only the name option
+       
+       INPUT STRING:
+        SELECT Name from USERS
+       
+       input <string>
+       output <list> || <False>
     """
     pass
 
 
 def addUser(name, tableName='USERS', dbName='radioDB.db'):
     """
-       MISSING DESCRIPTION
+       DEVELOPMENT
+       
+       takes a name as an input with the default values for tableName and dbName
+       makes a request to the database to create a new user
+       
+       INPUT STRING:
+        INSERT INTO tableName VALUES (uid, name, questions, scores)
+       
+       input <string>
+       output <boolean>
     """
     pass
    
 
 def delUser(name, tableName='USERS', dbName='radioDB.db'):
     """
-       MISSING DESCRIPTION
+       DEVELOPMENT
+       
+       takes a name as an input with default values for tableName and dbName
+       makes a request to the database to delete a user
+       
+       INPUT STRING:
+        DELETE FROM USERS WHERE Name=name
+       
+       input <string>
+       output <boolean>
+
     """
     pass
 
 
 def updateUser(name, target, value, tableName='USERS', dbName='radioDB.db'):
     """
-       MISSING DESCRIPTION
+       DEVELOPMENT
+       
+       takes a name, target and value as an input with the default values
+        for tableName and dbName
+       makes a request to the database to update a users target value to
+        the new value
+       
+       INPUT STRING:
+        UPDATE tableName SET target=value WHERE Name=name
+              
+       input <string>
+       output <boolean>
     """
     pass
 
