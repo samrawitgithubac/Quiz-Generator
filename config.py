@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 
 
+import json
 import sqlite3 as lite
 
 from clint.textui import colored
+from numpy.random import choice
 
+global VERBOSE
+VERBOSE = True
 
 def readNames(tableName='USERS', dbName='radioDB.db'):
     """
@@ -19,7 +23,28 @@ def readNames(tableName='USERS', dbName='radioDB.db'):
        input <string>
        output <list> || <False>
     """
-    pass
+    conn = lite.connect(dbName)
+    names = []
+    error = False
+    try:
+        cur = conn.cursor()
+        statement = "SELECT Name FROM USERS;"
+        response = cur.execute(statement)
+        getNames = response.fetchall()
+        names = [getNames[i][0] for i in xrange(len(getNames))]
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.close()
+        if error:
+            return False
+        else:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Successfully Retrieved Names"
+            return names
 
 
 def addUser(name, tableName='USERS', dbName='radioDB.db'):
@@ -35,8 +60,49 @@ def addUser(name, tableName='USERS', dbName='radioDB.db'):
        input <string>
        output <boolean>
     """
-    pass
-   
+    conn = None
+    error = False
+    name = name.replace(' ', '')
+    try:
+        if VERBOSE:
+            print colorYELLOW("[.]") + " Adding User " + name + " to DataBase ..."
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        names = readNames()
+        if name in names:
+            if VERBOSE:
+                print colorYELLOW("[!]") + " That Name is Already Taken"
+            error = True
+            raise Exception, "Name already in database"
+        getMaxUIDs = cur.execute("SELECT MAX(UID) FROM USERS;")
+        maxUIDs = getMaxUIDs.fetchone()
+        maxUID = int(maxUIDs[0])
+        
+        UID = maxUID + 1
+        UID = '%08d' % UID
+        
+        testTemplate = getQIDs()
+        testTemplate = json.dumps(testTemplate)
+
+        values = (UID, name, testTemplate, '[]')
+        values = str(values)
+        statement = "INSERT INTO " + tableName + " VALUES" + values
+        cur.execute(statement)
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.commit()
+            conn.close()
+        if not error:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Inserted Values Successfully"
+            return True
+        else:
+            return False   
+
 
 def delUser(name, tableName='USERS', dbName='radioDB.db'):
     """
@@ -52,7 +118,33 @@ def delUser(name, tableName='USERS', dbName='radioDB.db'):
        output <boolean>
 
     """
-    pass
+    conn = None
+    error = False
+    try:
+        names = readNames()
+        if name not in names:
+            if VERBOSE:
+                print colorYELLOW("[!]") + " That Name is Not Taken"
+            error = True
+            raise Exception, "Name not in database"
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = "DELETE FROM USERS WHERE Name='" + name + "';"
+        cur.execute(statement)
+    except Exception as e:
+        if VERBOSE:
+            print colorRED('[-]') + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.commit()
+            conn.close()
+        if error:
+            return False
+        else:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Succussefully Deleted User"
+            return True
 
 
 def updateUser(name, target, value, tableName='USERS', dbName='radioDB.db'):
@@ -70,7 +162,28 @@ def updateUser(name, target, value, tableName='USERS', dbName='radioDB.db'):
        input <string>
        output <boolean>
     """
-    pass
+    conn = None
+    error = False
+    try:
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = "UPDATE " + tableName + " SET " + target + "=? WHERE Name=?"
+        cur.execute(statement, (value, name))
+    except Exception as e:
+        error = True
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+    finally:
+        if conn:
+            conn.commit()
+            conn.close()
+        if error:
+            return False
+        else:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Successfully Updated User"
+            return True
+
 
 
 def readUserValue(name, target, tableName='USERS', dbName='radioDB.db'):
@@ -88,7 +201,65 @@ def readUserValue(name, target, tableName='USERS', dbName='radioDB.db'):
        input <string>
        output <string> || <False>
     """
-    pass
+    conn = None
+    error = False
+    data = []
+    try:
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = "SELECT " + target + " FROM " + tableName + " WHERE Name='" + name + "';"
+        cur.execute(statement)
+        response = cur.fetchall()
+        ### HERE ###
+        data = response[0][0]
+    except Exception as e:
+        error = True
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+    finally:
+        if conn:
+            conn.close()
+        if error:
+            return False
+        else:
+            return data
+
+def getQIDs(dbName='radioDB.db'):
+    """
+       DEVELOPMENT
+       
+       takes a database name as a default setting
+       makes a query to the database to create the original question template
+       
+       INPUT STRING:
+        SELECT QID from QUESTIONS
+       
+       input <string>
+       output <list> || <False>
+    """
+    conn = lite.connect(dbName)
+    testTemplate = {}
+    error = False
+    try:
+        cur = conn.cursor()
+        statement = "SELECT QID FROM QUESTIONS;"
+        response = cur.execute(statement)
+        getTemplate = response.fetchall()
+        for i in xrange(len(getTemplate)):
+            testTemplate[getTemplate[i][0]] = 0
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.close()
+        if error:
+            return False
+        else:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Successfully Retrieved Test Template"
+            return testTemplate
 
 
 def createTable(tableName, values, dbName='radioDB.db'):
@@ -108,7 +279,29 @@ def createTable(tableName, values, dbName='radioDB.db'):
        input <string>
        output <boolean>
     """
-    pass
+    conn = None
+    error = False
+    try:
+        if VERBOSE:
+            print colorYELLOW("[.]") + " Creating Table " + tableName + " ..."
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = "CREATE TABLE " + tableName + str(values)
+        cur.execute(statement)
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.close()
+        if not error:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Created Table Successfully"
+            return True
+        else:
+            return False
+
 
 
 def insertToDB(tableName, values, dbName='radioDB.db'):
@@ -125,7 +318,29 @@ def insertToDB(tableName, values, dbName='radioDB.db'):
        input <string>
        output <boolean>
     """
-    pass
+    conn = None
+    error = False
+    try:
+        if VERBOSE:
+            print colorYELLOW("[.]") + " Adding Values to " + tableName + " ..."
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = "INSERT INTO " + tableName + " VALUES" + values
+        cur.execute(statement)
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.commit()
+            conn.close()
+        if not error:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Inserted Values Successfully"
+            return True
+        else:
+            return False
 
 
 def selectQuestion(groupID, subgroupID, questionNumber, dbName='radioDB.db'):
@@ -143,7 +358,37 @@ def selectQuestion(groupID, subgroupID, questionNumber, dbName='radioDB.db'):
        input <string>
        output <dictionary> || <False>
     """
-    pass
+    conn = None
+    error = False
+    result = ''
+    try:
+        if VERBOSE:
+            print colorYELLOW("[.]") + " Selecting Question Number " + questionNumber + " from " + groupID + subgroupID + " ..."
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        QID = 'T' + groupID + subgroupID + questionNumber
+        statement = 'SELECT * FROM QUESTIONS WHERE QID="' + QID + '";'
+        cur.execute(statement)
+        row = cur.fetchone()
+        result = row
+        if result == None:
+            if VERBOSE:
+                print colorRED("[-]") + " Query Returned No Results"
+            error = True
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.close()
+        if not error:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Selected Question Successfully"
+            return result
+        else:
+            return False
+
 
 def selectRandomWithWeights(name, depreciator=0.2):
     """
@@ -155,7 +400,74 @@ def selectRandomWithWeights(name, depreciator=0.2):
        input <string>
        output <list> || <False>
     """
-    pass
+    choices = []
+    
+    userData = json.loads(readUserValue(name, "questionDict"))
+
+    subgroupIDs = 'ABCDEF'
+    
+    for i in xrange(10):
+        groupID = str(i)
+        for subgroupID in subgroupIDs:
+            questionRange = getQuestionRange(groupID, subgroupID)
+            temp = []
+            for e in questionRange:
+                temp.append(userData[e])
+            if temp == []:
+                break
+            else:
+                probabilities = [j * depreciator for j in temp]
+                keys = range(1,len(probabilities)+1)
+                keys = [str(e).zfill(2) for e in keys]
+                current = choice(keys, 1, probabilities)[0]
+                choices.append((groupID, subgroupID, current))
+    return choices
+
+
+def getQuestionRange(groupID, subgroupID, dbName='radioDB.db'):
+    """
+       DEVELOPMENT
+       
+       takes groupID and subgroupID as input with a database name with default settings
+       makes a query to the database to get the question range for the given 
+        group and subgroup
+       
+       INPUT STRING:
+        SELECT QID FROM QUESTIONS WHERE QID LIKE "groupID+subgroupID%"
+       
+       input <string>
+       output <list> || <False>
+    """
+    conn = None
+    error = False
+    result = ''
+    try:
+        if VERBOSE:
+            print colorYELLOW("[.]") + " Selecting Question List from " + groupID + subgroupID + " ..."
+        conn = lite.connect(dbName)
+        cur = conn.cursor()
+        statement = 'SELECT QID FROM QUESTIONS WHERE QID LIKE "T' + groupID + subgroupID + '%";'
+        cur.execute(statement)
+        row = cur.fetchall()
+        result = row
+        result = [result[i][0] for i in xrange(len(result))]
+        if result == None:
+            if VERBOSE:
+                print colorRED("[-]") + " Query Returned No Results"
+            error = True
+    except Exception as e:
+        if VERBOSE:
+            print colorRED("[-]") + " Something went wrong: %s" % e
+        error = True
+    finally:
+        if conn:
+            conn.close()
+        if not error:
+            if VERBOSE:
+                print colorGREEN("[+]") + " Selected Question List Successfully"
+            return result
+        else:
+            return False
 
 
 def colorRED(text):
