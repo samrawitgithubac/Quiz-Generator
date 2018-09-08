@@ -3,6 +3,7 @@
 
 import os, re, inflect
 from config import *
+from numpy.random import shuffle
 
 def startUp(dbName = 'radioDB.db'):
     """
@@ -218,10 +219,84 @@ def main():
        output <boolean>
     """
     startUp()
-    processUser()
+    name = processUser()
+
+    if not name:
+        print colorRED("[-]") + " Exiting from main..."
+        return False
+
+    print "Welcome %s!\nLet's begin!!" % name
+    
+    userData = json.loads(readUserValue(name, "questionDict"))
+    questionsList = selectRandomWithWeights(name)
+    questionCounter = 0
+    average = 0
+
+    while True:
+        os.system('pause')
+        os.system('cls')
+        questionCounter += 1
+        if questionCounter == 36:
+            break
+        
+        shuffle(questionsList)
+        options = questionsList.pop()
+        groupID, subgroupID, questionNumber = options[0], options[1], options[2]
+        entry = selectQuestion(groupID, subgroupID, questionNumber)
+        QID, question, answer, possibles_json = entry
+        possibles = json.loads(possibles_json)
+        answer = answer.replace('Jw==', "'")
+        answer = answer.replace('lg==', '"')
+
+        possibles.append(answer)
+        shuffle(possibles)
+        print "Question %s\t\t\t\t\t\t%s\n" % (str(questionCounter).zfill(2), QID)
+        print question.replace('Jw==', "'").replace('lg==', '"')
+        answers = 'abcd'
+        for i in xrange(len(answers)):
+            print "%s. %s" % (answers[i].upper(), possibles[i].replace('Jw==', "'").replace('lg==', '"'))
+        userChoice = raw_input("\n")
+#        userChoice = 'a'
+        if userChoice.lower() not in answers or len(userChoice) != 1:
+            userChoice = raw_input("\nAnswer must be in the following format\n\t\tA B C D\nPlease choose again: ")
+            if userChoice.lower() not in answers or len(userChoice) != 1:
+                print "Invalid Selection!"
+                print "Correct answer: %s" % answer
+            else:
+                choice_i = answers.index(userChoice.lower())
+                choice = possibles[choice_i]
+                if choice == answer:
+                    print 'Correct!!'
+                    userData[QID] += 1
+                    average += 1
+                else:
+                    print "\nIncorrect!!\n\nCorrect answer: %s" % answer
+                    userData[QID] -= 1
+
+        else:
+            choice_i = answers.index(userChoice.lower())
+            choice = possibles[choice_i]
+            if choice == answer:
+                print 'Correct!!'
+                userData[QID] += 1
+                average += 1
+            else:
+                print "\nIncorrect!!\n\nCorrect answer: %s" % answer
+                userData[QID] -= 1
+        print 
+
+    print 'correct:', average
+    print 'total:  ', 35
+    print 'avg:    ', str((average/35.0)*100)[:2] + '%'
+    average = str(average/35.0)
+    
+    scores = json.loads(readUserValue(name, "Scores"))
+    scores.append(average)
+    userData = json.dumps(userData)
+    scores = json.dumps(scores)
+    updateUser(name, 'questionDict', userData)
+    updateUser(name, 'Scores', scores)
 
 
 if __name__ == "__main__":
-#    global VERBOSE
-#    VERBOSE = True
     main()

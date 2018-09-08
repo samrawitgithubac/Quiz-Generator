@@ -8,7 +8,7 @@ from clint.textui import colored
 from numpy.random import choice
 
 global VERBOSE
-VERBOSE = True
+VERBOSE = False#True
 
 def readNames(tableName='USERS', dbName='radioDB.db'):
     """
