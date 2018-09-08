@@ -255,8 +255,7 @@ def main():
         answers = 'abcd'
         for i in xrange(len(answers)):
             print "%s. %s" % (answers[i].upper(), possibles[i].replace('Jw==', "'").replace('lg==', '"'))
-        userChoice = raw_input("\n")
-#        userChoice = 'a'
+        userChoice = raw_input("\nChoice: ")
         if userChoice.lower() not in answers or len(userChoice) != 1:
             userChoice = raw_input("\nAnswer must be in the following format\n\t\tA B C D\nPlease choose again: ")
             if userChoice.lower() not in answers or len(userChoice) != 1:
