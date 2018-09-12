@@ -395,7 +395,8 @@ def selectRandomWithWeights(name, depreciator=0.2):
        takes a name as input, with default value for depreciator
        
        first, pulls the full question Dictionary for the user
-       then, breaks 
+       then, creates a propability distribution for each question
+        with respect to their given subsection
        
        input <string>
        output <list> || <False>
@@ -417,6 +418,11 @@ def selectRandomWithWeights(name, depreciator=0.2):
                 break
             else:
                 probabilities = [j * depreciator for j in temp]
+                number_shift = 1-min(probabilities)
+                probabilities = [p+number_shift for p in probabilities]
+                total = sum(probabilities)
+                probabilities = [p/total for p in probabilities]
+
                 keys = range(1,len(probabilities)+1)
                 keys = [str(e).zfill(2) for e in keys]
                 current = choice(keys, 1, probabilities)[0]
